@@ -17,7 +17,14 @@ type timeEntryResult struct {
 }
 
 type timeEntryRequest struct {
-	TimeEntry TimeEntry `json:"time_entry"`
+	TimeEntry struct {
+		IssueId    int     `json:"issue_id,omitempty"`
+		ProjectId  int     `json:"project_id,omitempty"`
+		SpentOn    string  `json:"created_on,omitempty"`
+		Hours      float32 `json:"hours"`
+		ActivityId int     `json:"activity_id,omitempty"`
+		Comments   string  `json:"comments,omitempty"`
+	} `json:"time_entry"`
 }
 
 type TimeEntry struct {
@@ -30,6 +37,18 @@ type TimeEntry struct {
 	SpentOn   string `json:"created_on"`
 	CreatedOn string `json:"created_on"`
 	UpdatedOn string `json:"updated_on"`
+	Comments  string `json:"comments"`
+}
+
+func (t *TimeEntry) Request() *timeEntryRequest {
+	r := &timeEntryRequest{}
+	r.TimeEntry.IssueId = t.Issue.Id
+	r.TimeEntry.ProjectId = t.Project.Id
+	r.TimeEntry.SpentOn = t.SpentOn
+	r.TimeEntry.Hours = t.Hours
+	r.TimeEntry.ActivityId = t.Activity.Id
+	r.TimeEntry.Comments = t.Comments
+	return r
 }
 
 func (c *client) TimeEntries(projectId int) ([]TimeEntry, error) {
@@ -87,13 +106,12 @@ func (c *client) TimeEntry(id int) (*TimeEntry, error) {
 }
 
 func (c *client) CreateTimeEntry(timeEntry TimeEntry) (*TimeEntry, error) {
-	var ir timeEntryRequest
-	ir.TimeEntry = timeEntry
-	s, err := json.Marshal(ir)
+	s, err := json.Marshal(timeEntry.Request())
 	if err != nil {
 		return nil, err
 	}
 	req, err := http.NewRequest("POST", c.endpoint+"/time_entries.json?key="+c.apikey, strings.NewReader(string(s)))
+
 	if err != nil {
 		return nil, err
 	}
@@ -122,9 +140,7 @@ func (c *client) CreateTimeEntry(timeEntry TimeEntry) (*TimeEntry, error) {
 }
 
 func (c *client) UpdateTimeEntry(timeEntry TimeEntry) error {
-	var ir timeEntryRequest
-	ir.TimeEntry = timeEntry
-	s, err := json.Marshal(ir)
+	s, err := json.Marshal(timeEntry.Request())
 	if err != nil {
 		return err
 	}
