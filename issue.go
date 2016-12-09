@@ -22,24 +22,32 @@ type issuesResult struct {
 }
 
 type Issue struct {
-	Id           int            `json:"id"`
-	Subject      string         `json:"subject"`
-	Description  string         `json:"description"`
-	ProjectId    int            `json:"project_id"`
-	Project      *IdName        `json:"project"`
-	TrackerId    int            `json:"tracker_id"`
-	Tracker      *IdName        `json:"tracker"`
-	StatusId     int            `json:"status_id"`
-	Status       *IdName        `json:"status"`
-	Priority     *IdName        `json:"priority"`
-	Author       *IdName        `json:"author"`
-	FixedVersion *IdName        `json:"fixed_version"`
-	AssignedTo   *IdName        `json:"assigned_to"`
-	Notes        string         `json:"notes"`
-	StatusDate   string         `json:"status_date"`
-	CreatedOn    string         `json:"created_on"`
-	UpdatedOn    string         `json:"updated_on"`
-	CustomFields []*CustomField `json:"custom_fields,omitempty"`
+	Id                  int            `json:"id"`
+	Subject             string         `json:"subject"`
+	Description         string         `json:"description"`
+	ProjectId           int            `json:"project_id"`
+	Project             *IdName        `json:"project"`
+	TrackerId           int            `json:"tracker_id"`
+	Tracker             *IdName        `json:"tracker"`
+	StatusId            int            `json:"status_id"`
+	Status              *IdName        `json:"status"`
+	Priority            *IdName        `json:"priority"`
+	Author              *IdName        `json:"author"`
+	FixedVersion        *IdName        `json:"fixed_version"`
+	AssignedTo          *IdName        `json:"assigned_to"`
+	Notes               string         `json:"notes"`
+	StatusDate          string         `json:"status_date"`
+	CreatedOn           string         `json:"created_on"`
+	UpdatedOn           string         `json:"updated_on"`
+	Parent              *Id            `json:"parent"`
+	// ParentIssueId       int            `json:"parent_issue_id"`
+	DoneRatio           int            `json:"done_ratio"`
+	EstimatedHours      float32        `json:"estimated_hours"`
+	TotalEstimatedHours float32        `json:"total_estimated_hours"`
+	SpentHours          float32        `json:"spend_hours"`
+	TotalSpentHours     float32        `json:"total_spent_hours"`
+	WatcherUserIds      []int          `json:"watcher_user_ids"`
+	CustomFields        []*CustomField `json:"custom_fields,omitempty"`
 }
 
 type IssueFilter struct {
@@ -92,6 +100,7 @@ func (c *client) Issue(id int) (*Issue, error) {
 	defer res.Body.Close()
 
 	decoder := json.NewDecoder(res.Body)
+	fmt.Println(c.endpoint + "/issues/" + strconv.Itoa(id) + ".json?key=" + c.apikey)
 	var r issueRequest
 	if res.StatusCode != 200 {
 		var er errorsResult

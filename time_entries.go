@@ -17,7 +17,7 @@ type timeEntryResult struct {
 }
 
 type timeEntryRequest struct {
-	TimeEntry struct {
+	TimeEntry struct { // join to redmine.TimeEntry?
 		IssueId    int     `json:"issue_id,omitempty"`
 		ProjectId  int     `json:"project_id,omitempty"`
 		SpentOn    string  `json:"created_on,omitempty"`
@@ -51,13 +51,9 @@ func (t *TimeEntry) Request() *timeEntryRequest {
 	return r
 }
 
-func (c *client) TimeEntries(projectId int) ([]TimeEntry, error) {
-	res, err := c.Get(c.endpoint + "/projects/" + strconv.Itoa(projectId) + "/time_entries.json?key=" + c.apikey + c.getPaginationClause())
-	if err != nil {
-		return nil, err
-	}
+func parseTimeEntries(res *http.Response) ([]TimeEntry, error) {
+	var err error
 	defer res.Body.Close()
-
 	decoder := json.NewDecoder(res.Body)
 	var r timeEntriesResult
 	if res.StatusCode == 404 {
@@ -76,6 +72,22 @@ func (c *client) TimeEntries(projectId int) ([]TimeEntry, error) {
 		return nil, err
 	}
 	return r.TimeEntries, nil
+}
+
+func (c *client) IssueTimeEntries(issueId int) ([]TimeEntry, error) {
+	res, err := c.Get(c.endpoint + "/issues/" + strconv.Itoa(issueId) + "/time_entries.json?key=" + c.apikey + c.getPaginationClause())
+	if err != nil {
+		return nil, err
+	}
+	return parseTimeEntries(res)
+}
+
+func (c *client) ProjectTimeEntries(projectId int) ([]TimeEntry, error) {
+	res, err := c.Get(c.endpoint + "/projects/" + strconv.Itoa(projectId) + "/time_entries.json?key=" + c.apikey + c.getPaginationClause())
+	if err != nil {
+		return nil, err
+	}
+	return parseTimeEntries(res)
 }
 
 func (c *client) TimeEntry(id int) (*TimeEntry, error) {
