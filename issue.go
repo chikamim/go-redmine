@@ -100,7 +100,6 @@ func (c *client) Issue(id int) (*Issue, error) {
 	defer res.Body.Close()
 
 	decoder := json.NewDecoder(res.Body)
-	fmt.Println(c.endpoint + "/issues/" + strconv.Itoa(id) + ".json?key=" + c.apikey)
 	var r issueRequest
 	if res.StatusCode != 200 {
 		var er errorsResult
