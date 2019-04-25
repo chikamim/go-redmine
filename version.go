@@ -8,38 +8,42 @@ import (
 	"strings"
 )
 
-type issueRelationsResult struct {
-	IssueRelations []IssueRelation `json:"relations"`
+type versionRequest struct {
+	Version Version `json:"version"`
 }
 
-type issueRelationResult struct {
-	IssueRelation IssueRelation `json:"issue_relation"`
+type versionResult struct {
+	Version Version `json:"version"`
 }
 
-type issueRelationRequest struct {
-	IssueRelation IssueRelation `json:"issue_relation"`
+type versionsResult struct {
+	Versions []Version `json:"versions"`
 }
 
-type IssueRelation struct {
-	Id           int    `json:"id"`
-	IssueId      string `json:"issue_id"`
-	IssueToId    string `json:"issue_to_id"`
-	RelationType string `json:"relation_type"`
-	Delay        string `json:"delay"`
+type Version struct {
+	Id          int    `json:"id"`
+	Project     IdName `json:"project"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Status      string `json:"status"`
+	DueDate     string `json:"due_date"`
+	CreatedOn   string `json:"created_on"`
+	UpdatedOn   string `json:"updated_on"`
 }
 
-func (c *Client) IssueRelations(issueId int) ([]IssueRelation, error) {
-	res, err := c.Get(c.endpoint + "/issue/" + strconv.Itoa(issueId) + "/relations.json?key=" + c.apikey + c.getPaginationClause())
+func (c *Client) Version(id int) (*Version, error) {
+	res, err := c.Get(c.endpoint + "/versions/" + strconv.Itoa(id) + ".json?key=" + c.apikey)
 	if err != nil {
 		return nil, err
 	}
 	defer res.Body.Close()
 
-	decoder := json.NewDecoder(res.Body)
-	var r issueRelationsResult
 	if res.StatusCode == 404 {
 		return nil, errors.New("Not Found")
 	}
+
+	decoder := json.NewDecoder(res.Body)
+	var r versionResult
 	if res.StatusCode != 200 {
 		var er errorsResult
 		err = decoder.Decode(&er)
@@ -52,21 +56,22 @@ func (c *Client) IssueRelations(issueId int) ([]IssueRelation, error) {
 	if err != nil {
 		return nil, err
 	}
-	return r.IssueRelations, nil
+	return &r.Version, nil
 }
 
-func (c *Client) IssueRelation(id int) (*IssueRelation, error) {
-	res, err := c.Get(c.endpoint + "/relations/" + strconv.Itoa(id) + ".json?key=" + c.apikey)
+func (c *Client) Versions(projectId int) ([]Version, error) {
+	res, err := c.Get(c.endpoint + "/projects/" + strconv.Itoa(projectId) + "/versions.json?key=" + c.apikey + c.getPaginationClause())
 	if err != nil {
 		return nil, err
 	}
 	defer res.Body.Close()
 
-	decoder := json.NewDecoder(res.Body)
-	var r issueRelationResult
 	if res.StatusCode == 404 {
 		return nil, errors.New("Not Found")
 	}
+
+	decoder := json.NewDecoder(res.Body)
+	var r versionsResult
 	if res.StatusCode != 200 {
 		var er errorsResult
 		err = decoder.Decode(&er)
@@ -79,17 +84,17 @@ func (c *Client) IssueRelation(id int) (*IssueRelation, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &r.IssueRelation, nil
+	return r.Versions, nil
 }
 
-func (c *Client) CreateIssueRelation(issueRelation IssueRelation) (*IssueRelation, error) {
-	var ir issueRelationRequest
-	ir.IssueRelation = issueRelation
+func (c *Client) CreateVersion(version Version) (*Version, error) {
+	var ir versionRequest
+	ir.Version = version
 	s, err := json.Marshal(ir)
 	if err != nil {
 		return nil, err
 	}
-	req, err := http.NewRequest("POST", c.endpoint+"/relations.json?key="+c.apikey, strings.NewReader(string(s)))
+	req, err := http.NewRequest("POST", c.endpoint+"/projects/"+strconv.Itoa(version.Project.Id)+"/versions.json?key="+c.apikey, strings.NewReader(string(s)))
 	if err != nil {
 		return nil, err
 	}
@@ -100,8 +105,12 @@ func (c *Client) CreateIssueRelation(issueRelation IssueRelation) (*IssueRelatio
 	}
 	defer res.Body.Close()
 
+	if res.StatusCode == 404 {
+		return nil, errors.New("Not Found")
+	}
+
 	decoder := json.NewDecoder(res.Body)
-	var r issueRelationResult
+	var r versionRequest
 	if res.StatusCode != 201 {
 		var er errorsResult
 		err = decoder.Decode(&er)
@@ -114,17 +123,17 @@ func (c *Client) CreateIssueRelation(issueRelation IssueRelation) (*IssueRelatio
 	if err != nil {
 		return nil, err
 	}
-	return &r.IssueRelation, nil
+	return &r.Version, err
 }
 
-func (c *Client) UpdateIssueRelation(issueRelation IssueRelation) error {
-	var ir issueRelationRequest
-	ir.IssueRelation = issueRelation
+func (c *Client) UpdateVersion(version Version) error {
+	var ir versionRequest
+	ir.Version = version
 	s, err := json.Marshal(ir)
 	if err != nil {
 		return err
 	}
-	req, err := http.NewRequest("PUT", c.endpoint+"/relations/"+strconv.Itoa(issueRelation.Id)+".json?key="+c.apikey, strings.NewReader(string(s)))
+	req, err := http.NewRequest("PUT", c.endpoint+"/versions/"+strconv.Itoa(version.Id)+".json?key="+c.apikey, strings.NewReader(string(s)))
 	if err != nil {
 		return err
 	}
@@ -139,21 +148,17 @@ func (c *Client) UpdateIssueRelation(issueRelation IssueRelation) error {
 		return errors.New("Not Found")
 	}
 	if res.StatusCode != 200 {
-		decoder := json.NewDecoder(res.Body)
 		var er errorsResult
-		err = decoder.Decode(&er)
+		err = json.NewDecoder(res.Body).Decode(&er)
 		if err == nil {
 			err = errors.New(strings.Join(er.Errors, "\n"))
 		}
 	}
-	if err != nil {
-		return err
-	}
 	return err
 }
 
-func (c *Client) DeleteIssueRelation(id int) error {
-	req, err := http.NewRequest("DELETE", c.endpoint+"/relations/"+strconv.Itoa(id)+".json?key="+c.apikey, strings.NewReader(""))
+func (c *Client) DeleteVersion(id int) error {
+	req, err := http.NewRequest("DELETE", c.endpoint+"/versions/"+strconv.Itoa(id)+".json?key="+c.apikey, strings.NewReader(""))
 	if err != nil {
 		return err
 	}
@@ -167,11 +172,9 @@ func (c *Client) DeleteIssueRelation(id int) error {
 	if res.StatusCode == 404 {
 		return errors.New("Not Found")
 	}
-
-	decoder := json.NewDecoder(res.Body)
 	if res.StatusCode != 200 {
 		var er errorsResult
-		err = decoder.Decode(&er)
+		err = json.NewDecoder(res.Body).Decode(&er)
 		if err == nil {
 			err = errors.New(strings.Join(er.Errors, "\n"))
 		}

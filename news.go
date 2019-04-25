@@ -17,10 +17,10 @@ type News struct {
 	Title       string `json:"title"`
 	Summary     string `json:"summary"`
 	Description string `json:"description"`
-	CreatedOn   string `json:created_on`
+	CreatedOn   string `json:"created_on"`
 }
 
-func (c *client) News(projectId int) ([]News, error) {
+func (c *Client) News(projectId int) ([]News, error) {
 	res, err := c.Get(c.endpoint + "/projects/" + strconv.Itoa(projectId) + "/news.json?key=" + c.apikey + c.getPaginationClause())
 	if err != nil {
 		return nil, err

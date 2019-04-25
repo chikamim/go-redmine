@@ -28,7 +28,7 @@ type Membership struct {
 	Groups  []IdName `json:"groups"`
 }
 
-func (c *client) Memberships(projectId int) ([]Membership, error) {
+func (c *Client) Memberships(projectId int) ([]Membership, error) {
 	res, err := c.Get(c.endpoint + "/projects/" + strconv.Itoa(projectId) + "/memberships.json?key=" + c.apikey + c.getPaginationClause())
 	if err != nil {
 		return nil, err
@@ -55,7 +55,7 @@ func (c *client) Memberships(projectId int) ([]Membership, error) {
 	return r.Memberships, nil
 }
 
-func (c *client) Membership(id int) (*Membership, error) {
+func (c *Client) Membership(id int) (*Membership, error) {
 	res, err := c.Get(c.endpoint + "/memberships/" + strconv.Itoa(id) + ".json?key=" + c.apikey)
 	if err != nil {
 		return nil, err
@@ -82,7 +82,7 @@ func (c *client) Membership(id int) (*Membership, error) {
 	return &r.Membership, nil
 }
 
-func (c *client) CreateMembership(membership Membership) (*Membership, error) {
+func (c *Client) CreateMembership(membership Membership) (*Membership, error) {
 	var ir membershipRequest
 	ir.Membership = membership
 	s, err := json.Marshal(ir)
@@ -117,7 +117,7 @@ func (c *client) CreateMembership(membership Membership) (*Membership, error) {
 	return &r.Membership, nil
 }
 
-func (c *client) UpdateMembership(membership Membership) error {
+func (c *Client) UpdateMembership(membership Membership) error {
 	var ir membershipRequest
 	ir.Membership = membership
 	s, err := json.Marshal(ir)
@@ -130,14 +130,14 @@ func (c *client) UpdateMembership(membership Membership) error {
 	}
 	req.Header.Set("Content-Type", "application/json")
 	res, err := c.Do(req)
-	if res.StatusCode == 404 {
-		return errors.New("Not Found")
-	}
 	if err != nil {
 		return err
 	}
 	defer res.Body.Close()
 
+	if res.StatusCode == 404 {
+		return errors.New("Not Found")
+	}
 	if res.StatusCode != 200 {
 		decoder := json.NewDecoder(res.Body)
 		var er errorsResult
@@ -152,20 +152,21 @@ func (c *client) UpdateMembership(membership Membership) error {
 	return err
 }
 
-func (c *client) DeleteMembership(id int) error {
+func (c *Client) DeleteMembership(id int) error {
 	req, err := http.NewRequest("DELETE", c.endpoint+"/memberships/"+strconv.Itoa(id)+".json?key="+c.apikey, strings.NewReader(""))
 	if err != nil {
 		return err
 	}
 	req.Header.Set("Content-Type", "application/json")
 	res, err := c.Do(req)
-	if res.StatusCode == 404 {
-		return errors.New("Not Found")
-	}
 	if err != nil {
 		return err
 	}
 	defer res.Body.Close()
+
+	if res.StatusCode == 404 {
+		return errors.New("Not Found")
+	}
 
 	decoder := json.NewDecoder(res.Body)
 	if res.StatusCode != 200 {

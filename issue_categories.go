@@ -9,7 +9,8 @@ import (
 )
 
 type issueCategoriesResult struct {
-	IssueCategories []IssueCategory `json:"categories"`
+	IssueCategories []IssueCategory `json:"issue_categories"`
+	TotalCount      int             `json:"total_count"`
 }
 
 type issueCategoryResult struct {
@@ -21,12 +22,13 @@ type issueCategoryRequest struct {
 }
 
 type IssueCategory struct {
-	Id      int    `json:"id"`
-	Project IdName `json:"project"`
-	Name    string `json:"name"`
+	Id         int    `json:"id"`
+	Project    IdName `json:"project"`
+	Name       string `json:"name"`
+	AssignedTo IdName `json:"assigned_to"`
 }
 
-func (c *client) IssueCategories(projectId int) ([]IssueCategory, error) {
+func (c *Client) IssueCategories(projectId int) ([]IssueCategory, error) {
 	res, err := c.Get(c.endpoint + "/projects/" + strconv.Itoa(projectId) + "/issue_categories.json?key=" + c.apikey + c.getPaginationClause())
 	if err != nil {
 		return nil, err
@@ -53,7 +55,7 @@ func (c *client) IssueCategories(projectId int) ([]IssueCategory, error) {
 	return r.IssueCategories, nil
 }
 
-func (c *client) IssueCategory(id int) (*IssueCategory, error) {
+func (c *Client) IssueCategory(id int) (*IssueCategory, error) {
 	res, err := c.Get(c.endpoint + "/issue_categories/" + strconv.Itoa(id) + ".json?key=" + c.apikey)
 	if err != nil {
 		return nil, err
@@ -80,7 +82,7 @@ func (c *client) IssueCategory(id int) (*IssueCategory, error) {
 	return &r.IssueCategory, nil
 }
 
-func (c *client) CreateIssueCategory(issueCategory IssueCategory) (*IssueCategory, error) {
+func (c *Client) CreateIssueCategory(issueCategory IssueCategory) (*IssueCategory, error) {
 	var ir issueCategoryRequest
 	ir.IssueCategory = issueCategory
 	s, err := json.Marshal(ir)
@@ -115,7 +117,7 @@ func (c *client) CreateIssueCategory(issueCategory IssueCategory) (*IssueCategor
 	return &r.IssueCategory, nil
 }
 
-func (c *client) UpdateIssueCategory(issueCategory IssueCategory) error {
+func (c *Client) UpdateIssueCategory(issueCategory IssueCategory) error {
 	var ir issueCategoryRequest
 	ir.IssueCategory = issueCategory
 	s, err := json.Marshal(ir)
@@ -128,14 +130,14 @@ func (c *client) UpdateIssueCategory(issueCategory IssueCategory) error {
 	}
 	req.Header.Set("Content-Type", "application/json")
 	res, err := c.Do(req)
-	if res.StatusCode == 404 {
-		return errors.New("Not Found")
-	}
 	if err != nil {
 		return err
 	}
 	defer res.Body.Close()
 
+	if res.StatusCode == 404 {
+		return errors.New("Not Found")
+	}
 	if res.StatusCode != 200 {
 		decoder := json.NewDecoder(res.Body)
 		var er errorsResult
@@ -150,20 +152,21 @@ func (c *client) UpdateIssueCategory(issueCategory IssueCategory) error {
 	return err
 }
 
-func (c *client) DeleteIssueCategory(id int) error {
+func (c *Client) DeleteIssueCategory(id int) error {
 	req, err := http.NewRequest("DELETE", c.endpoint+"/issue_categories/"+strconv.Itoa(id)+".json?key="+c.apikey, strings.NewReader(""))
 	if err != nil {
 		return err
 	}
 	req.Header.Set("Content-Type", "application/json")
 	res, err := c.Do(req)
-	if res.StatusCode == 404 {
-		return errors.New("Not Found")
-	}
 	if err != nil {
 		return err
 	}
 	defer res.Body.Close()
+
+	if res.StatusCode == 404 {
+		return errors.New("Not Found")
+	}
 
 	decoder := json.NewDecoder(res.Body)
 	if res.StatusCode != 200 {

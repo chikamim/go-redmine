@@ -15,7 +15,7 @@ Provide Interfaces to redmine APIs.
 |Time Entries       |      100%|
 |News               |      100%|
 |Issue Relations    |      100%|
-|Versions           |        0%|
+|Versions           |      100%|
 |Wiki Pages         |      100%|
 |Queries            |        0%|
 |Attachments        |        0%|
@@ -97,6 +97,9 @@ Write following:
     	"apikey": "YOUR-API-KEY",
     	"project": 1 // default project id
     }
+
+If you want switching configuration file, you should use `GODMINE_ENV` environment variable.
+If you set `GODMINE_ENV` to *mine*, godmine use `settings.mine.json` to configuration file.
 
 # License
 
