@@ -32,6 +32,9 @@ type TimeEntry struct {
 	CreatedOn    string         `json:"created_on"`
 	UpdatedOn    string         `json:"updated_on"`
 	CustomFields []*CustomField `json:"custom_fields,omitempty"`
+	IssueId      int            `json:"issue_id,omitempty"`
+	ProjectId    int            `json:"project_id,omitempty"`
+	ActivityId   int            `json:"activity_id,omitempty"`
 }
 
 // TimeEntriesWithFilter send query and return parsed result
